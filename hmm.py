@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2012, Chi-En Wu
 
-from itertools import izip
+import itertools
+from itertools import zip_longest as izip
 from math import log
 
 def _normalize_prob(prob, item_set):
@@ -54,7 +55,7 @@ def _get_init_model(sequences):
 
     for state_list, symbol_list in sequences:
         pre_state = None
-        for state, symbol in izip(state_list, symbol_list):
+        for state, symbol in zip(state_list, symbol_list):
             _count(state, state_count)
             _count(symbol, symbol_count)
             _count_two_dim(state, symbol, state_symbol_count)
@@ -64,7 +65,7 @@ def _get_init_model(sequences):
                 _count_two_dim(pre_state, state, state_trans_count)
             pre_state = state
 
-    return Model(state_count.keys(), symbol_count.keys(),
+    return Model(list(state_count.keys()), list(symbol_count.keys()),
         state_start_count, state_trans_count, state_symbol_count)
 
 def train(sequences, delta=0.0001, smoothing=0):
@@ -185,7 +186,7 @@ class Model(object):
         for state in self._states:
             alpha[0][state] = self.start_prob(state) * self.emit_prob(state, sequence[0])
 
-        for index in xrange(1, sequence_length):
+        for index in range(1, sequence_length):
             alpha.append({})
             for state_to in self._states:
                 prob = 0
@@ -205,7 +206,7 @@ class Model(object):
         for state in self._states:
             beta[0][state] = 1
 
-        for index in xrange(sequence_length - 1, 0, -1):
+        for index in range(sequence_length - 1, 0, -1):
             beta.insert(0, {})
             for state_from in self._states:
                 prob = 0
@@ -250,7 +251,7 @@ class Model(object):
             delta[state] = self.start_prob(state) * self.emit_prob(state, sequence[0])
 
         pre = []
-        for index in xrange(1, sequence_length):
+        for index in range(1, sequence_length):
             delta_bar = {}
             pre_state = {}
             for state_to in self._states:
@@ -277,7 +278,7 @@ class Model(object):
             return []
 
         result = [max_state]
-        for index in xrange(sequence_length - 1, 0, -1):
+        for index in range(sequence_length - 1, 0, -1):
             max_state = pre[index - 1][max_state]
             result.insert(0, max_state)
 
@@ -298,7 +299,7 @@ class Model(object):
         beta = self._backward(sequence)
 
         gamma = []
-        for index in xrange(length):
+        for index in range(length):
             prob_sum = 0
             gamma.append({})
             for state in self._states:
@@ -313,7 +314,7 @@ class Model(object):
                 gamma[index][state] /= prob_sum
 
         xi = []
-        for index in xrange(length - 1):
+        for index in range(length - 1):
             prob_sum = 0
             xi.append({})
             for state_from in self._states:
@@ -341,14 +342,14 @@ class Model(object):
 
             # update transition probability
             gamma_sum = 0
-            for index in xrange(length - 1):
+            for index in range(length - 1):
                 gamma_sum += gamma[index][state]
 
             if gamma_sum > 0:
                 denominator = gamma_sum + states_number * smoothing
                 for state_to in self._states:
                     xi_sum = 0
-                    for index in xrange(length - 1):
+                    for index in range(length - 1):
                         xi_sum += xi[index][state][state_to]
                     self._trans_prob[state][state_to] = (smoothing + xi_sum) / denominator
             else:
@@ -361,7 +362,7 @@ class Model(object):
             for symbol in self._symbols:
                 emit_gamma_sum[symbol] = 0
 
-            for index in xrange(length):
+            for index in range(length):
                 emit_gamma_sum[sequence[index]] += gamma[index][state]
 
             if gamma_sum > 0:
